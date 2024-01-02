@@ -1,0 +1,264 @@
+<html lang="en">
+<head>
+    <title>
+        Mini Dashboard By Sai
+    </title>
+    <link rel="icon" href="favicon.png" type="image/x-icon">
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playpen+Sans:wght@400;500;600&display=swap">
+  <style>
+    /* Your existing CSS code goes here */
+
+    /* Add a new class for the download button */
+    @import url('https://fonts.googleapis.com/css2?family=Playpen+Sans:wght@400;500;600&display=swap');
+
+:root {
+  --pink: #f45891;
+  --yellow: #fbee9d;
+  --green: #a9ef58;
+  --blue: #34add1;
+  --purple: #c97fe5;
+}
+
+* {
+  margin: 0;
+}
+
+#board {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background-color: #b38856;
+  overflow: hidden;
+  perspective: 1600px;
+  display: flex;
+  justify-content: end;
+  align-items: end;
+  box-sizing: border-box;
+  padding: 50px;
+}
+
+.stickynote {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  box-sizing: border-box;
+  padding: 10px;
+  transform: rotateX(5deg);
+  box-shadow: -1px 10px 5px -4px rgba(0, 0, 0, 0.012), 
+              inset 0 24px 30px -12px rgba(0, 0, 0, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.stickynote:nth-child(n) {
+  background: var(--purple);
+}
+
+.stickynote:nth-child(2n) {
+  background: var(--pink);
+}
+
+.stickynote:nth-child(3n) {
+  background: var(--green);
+}
+
+.stickynote:nth-child(4n) {
+  background: var(--blue);
+}
+
+.stickynote:nth-child(5n) {
+  background: var(--yellow);
+}
+
+.stickynote-text {
+  border-radius: 10px;
+  color: #373C49;
+  font-size: 18px;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  outline: none;
+  text-align: center;
+  resize: none;
+  overflow: hidden;
+  font-family: 'Playpen Sans', cursive;
+}
+
+.stickynote-text:focus {
+  background-color: rgba(0,0,0,0.1);
+}
+
+.stickynote-text::placeholder {
+  color: black;
+  opacity: 30%;
+}
+    .download-button {
+      position: fixed;
+      bottom: 580px;
+      right: 500px;
+      background-color: var(--blue);
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <main id="board">
+    <!-- Your existing HTML and CSS code goes here -->
+  </main>
+
+  <!-- Add the html2canvas library -->
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+  <!-- Add a download button with an onclick event -->
+  <button class="download-button" onclick="downloadBoard()">Take ScreenShot</button>
+<script src="https://unpkg.co/gsap@3/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3/dist/Draggable.min.js"></script>
+<script src="https://assets.codepen.io/16327/InertiaPlugin.min.js"></script>
+  <script>
+    // Create stack of sticky notes
+const board = document.querySelector("#board")
+for (let i = 0; i < 100; i++) {
+  const sticky = document.createElement("div");
+  sticky.classList.add("stickynote");
+  
+  const text = document.createElement("textarea");
+  text.type = "text";
+  text.placeholder = "Drag Me";
+  text.maxLength = 100;
+  text.classList.add("stickynote-text");
+  
+  sticky.appendChild(text);
+  
+  board.appendChild(sticky);
+}
+
+// Dynamically change height of textarea
+document.querySelectorAll('textarea').forEach(textarea => {
+  function setHeight() {
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }
+  setHeight();
+  textarea.addEventListener('input', setHeight);
+  textarea.addEventListener('change', setHeight);
+});
+
+// Make list of draggable sticky notes
+// Also add some cool adjustments that make it respond to speed of drag
+// If you are reading this you can actually place stickies with an angle if you do it fast enough ;)
+const draggables = Draggable.create(".stickynote", {
+  type: "x,y",
+  onDragStart: function () {
+    InertiaPlugin.track(this.target, "x");
+    grabNoteAnimation(this.target);
+    const inputField = this.target.querySelector('.stickynote-text');
+    inputField.placeholder = "Stick Me";
+  },
+  onDrag: function () {
+    let dx = InertiaPlugin.getVelocity(this.target, "x");
+      gsap.to(this.target, {
+        rotation: dx * -0.003,
+        duration: 0.5,
+        ease: "elastic.out(1.8, 0.6)",
+        onComplete: function () {
+          gsap.to(this.target, {
+            rotation: 0,
+            duration: 0.5,
+            ease: "elastic.out(1.8, 0.6)"
+          });
+        }
+      });
+  },
+  onDragEnd: function () {
+    releaseNoteAnimation(this.target);
+    const inputField = this.target.querySelector('.stickynote-text');
+    inputField.placeholder = "Write On Me";
+  },
+  dragClickables: false,
+});
+
+// Rotates backward on X axis and changes scale to appear like it is being ripped up
+function grabNoteAnimation(target) {
+  const timeline = gsap.timeline();
+  timeline
+    .to(target, {
+      rotateX: 30,
+      boxShadow: "-1px 14px 40px -4px rgba(0, 0, 0, 0.12), inset 0 14px 20px -12px rgba(0, 0, 0, 0.3)",
+      duration: 0.3
+    })
+    .to(target, {
+      rotation: 0,
+      rotateX: 5,
+      scale: 1.1,
+      boxShadow: "-1px 14px 40px -4px rgba(0, 0, 0, 0.12), inset 0 24px 30px -12px rgba(0, 0, 0, 0.3)",
+      ease: "elastic.out(0.8, 0.5)"
+    }, 0.15);
+  timeline.play();
+}
+
+// Does the reverse of the previous function with a few different modifications to stick back down
+function releaseNoteAnimation(target) {
+  const timeline = gsap.timeline();
+  timeline
+    .to(target, {
+      rotateX: 30,
+      boxShadow: "-1px 10px 5px -4px rgba(0, 0, 0, 0.2), inset 0 24px 30px -12px rgba(0, 0, 0, 0.3)",
+      duration: 0.3
+    })
+    .to(target, {
+      scale: 1
+    }, 0)
+    .to(target, {
+      rotateX: 5,
+      boxShadow: "-1px 10px 5px -4px rgba(0, 0, 0, 0.2), inset 0 24px 30px -12px rgba(0, 0, 0, 0.3)",
+      ease: "elastic.out(0.8, 0.5)"
+    }, 0.2);
+  timeline.play();
+}
+
+// Fixes weirdness of typing on text box and dragging
+document.querySelectorAll(".stickynote-text").forEach((textField) => {
+  textField.addEventListener("focus", () => {
+    draggables.forEach((instance) => {
+      if (instance.target.contains(textField)) {
+        instance.disable();
+      }
+    });
+  });
+  
+  textField.addEventListener("blur", () => {
+    draggables.forEach((instance) => {
+      if (instance.target.contains(textField)) {
+        instance.enable();
+      }
+    });
+  });
+});
+    function downloadBoard() {
+      // Use html2canvas to capture the content of the board
+      html2canvas(document.getElementById('board')).then(canvas => {
+        // Convert the canvas to data URL
+        var dataURL = canvas.toDataURL('image/png');
+
+        // Create a download link and trigger a click event to download the image
+        var a = document.createElement('a');
+        a.href = dataURL;
+        a.download = 'Sai`s_Mini_DashBoard.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      });
+    }
+  </script>
+</body>
+</html>
